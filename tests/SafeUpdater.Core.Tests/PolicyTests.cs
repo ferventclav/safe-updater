@@ -91,6 +91,7 @@ public class PolicyTests
     {
         IncludeMajors = majors,
         Ignored = new HashSet<string>(ignored ?? [], StringComparer.OrdinalIgnoreCase),
+        Today = new DateTime(2026, 11, 4),
         ChocolateyPackages = choco ?? [],
         RustupPresent = rustup,
     };
@@ -189,10 +190,13 @@ public class PolicyTests
         ["optional Windows update (preview)"] = new(() => WinUpdate(optional: true), "Optional"),
         ["driver with no date"] = new(() => Driver(null, Jan2025), "Can't confirm"),
         ["driver whose device wasn't found"] = new(() => Driver(Jul2026, null), "Can't confirm"),
-        ["driver older than the installed one (the 2017 Intel case)"] = new(() => Driver(new DateTime(2017, 9, 19), Jan2025), "Not newer"),
+        ["the 2017 Intel chipset driver, against a 2006-dated in-box driver"] = new(() => Driver(new DateTime(2017, 9, 19), new DateTime(2006, 6, 21), optional: true), "Old driver"),
+        ["driver older than three years"] = new(() => Driver(new DateTime(2023, 6, 1), new DateTime(2020, 1, 1)), "Old driver"),
+        ["recent driver over Windows' own 2006-dated driver"] = new(() => Driver(Jul2026, new DateTime(2006, 6, 21)), "Can't confirm"),
+        ["driver older than the installed one"] = new(() => Driver(Jan2025, Jul2026), "Not newer"),
         ["driver the same age as the installed one"] = new(() => Driver(Jan2025, Jan2025), "Not newer"),
-        ["older driver stays hidden with majors on"] = new(() => Driver(new DateTime(2017, 9, 19), Jan2025), "Not newer", Ctx: Ctx(majors: true)),
-        ["optional older driver is hidden, not just unticked"] = new(() => Driver(new DateTime(2017, 9, 19), Jan2025, optional: true), "Not newer"),
+        ["old driver stays hidden with majors on"] = new(() => Driver(new DateTime(2017, 9, 19), Jan2025), "Old driver", Ctx: Ctx(majors: true)),
+        ["optional older driver is hidden, not just unticked"] = new(() => Driver(Jan2025, Jul2026, optional: true), "Not newer"),
         // ---- 9. majors of libraries and runtimes
         ["pip major (the av 19 case)"] = new(() => Pip("av", "18.0.0", "19.0.2"), "Major version"),
         ["pip 0.x minor counts as major"] = new(() => Pip("tokenizers", "0.21.4", "0.22.1"), "Major version"),
@@ -243,7 +247,7 @@ public class PolicyTests
             .Distinct()
             .ToList();
 
-        Assert.Equal(13, labels.Count);
+        Assert.Equal(14, labels.Count);
         Assert.All(labels, l => Assert.Contains(Cases.Values, c => c.Hidden == l));
     }
 
@@ -324,7 +328,6 @@ public class PolicyTests
         string jan = $"{Jan2025:d MMM yyyy}", sep = $"{new DateTime(2017, 9, 19):d MMM yyyy}";
         Assert.Contains(jan, d.Note);
         Assert.Contains(sep, old.Note);
-        Assert.Contains(jan, old.Note);
     }
 
     [Fact]

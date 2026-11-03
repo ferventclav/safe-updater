@@ -45,10 +45,12 @@ public static partial class PythonSource
 
         out = subprocess.run([sys.executable, "-m", "pip", "list", "--outdated", "--format=json", "-v",
                               "--disable-pip-version-check"], capture_output=True, text=True, encoding="utf-8")
+        # -v also prints notes such as "Link requires a different Python" on stdout, so only the JSON line is read.
+        found = [l for l in (out.stdout or "").splitlines() if l.startswith("[")]
         try:
-            items = json.loads(out.stdout or "[]")
-        except ValueError:
-            print(json.dumps({"error": (out.stderr or out.stdout)[-400:]}))
+            items = json.loads(found[-1])
+        except (IndexError, ValueError):
+            print(json.dumps({"error": (out.stderr or "").strip()[-300:] or "pip did not print its list"}))
             sys.exit(0)
 
         user_site = ""
@@ -206,7 +208,7 @@ public static partial class PythonSource
         except Exception:
             pass
         res = {"user": [], "env": []}
-        for p in json.loads(out.stdout or "[]"):
+        for p in json.loads(next((l for l in reversed((out.stdout or "").splitlines()) if l.startswith("[")), "[]")):
             if p.get("editable_project_location"):
                 continue
             loc = os.path.normcase(os.path.abspath(p.get("location") or ""))

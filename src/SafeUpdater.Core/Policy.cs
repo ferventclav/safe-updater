@@ -7,6 +7,7 @@ public sealed class PolicyContext
 {
     public bool IncludeMajors { get; init; }
     public IReadOnlySet<string> Ignored { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    public DateTime Today { get; init; } = DateTime.Today;
 
     /// <summary>Packages Chocolatey manages; winget must not update the same apps.</summary>
     public IReadOnlyCollection<string> ChocolateyPackages { get; init; } = [];
@@ -42,6 +43,11 @@ public static partial class Policy
         ["faster-whisper", "ctranslate2", "av", "onnxruntime", "tokenizers", "huggingface-hub", "numpy"];
 
     private const string MajorsHint = " Turn on Include major versions to list it.";
+
+    /// <summary>A driver older than this is hidden whatever the device has (the 2017 Intel chipset driver Windows keeps offering).</summary>
+    private const int OldDriverYears = 3;
+
+    private static readonly DateTime InboxDriverDate = new(2006, 6, 21);
 
     [GeneratedRegex(@"[^a-z0-9]")]
     private static partial Regex NonAlnum();
@@ -200,9 +206,16 @@ public static partial class Policy
                 {
                     return ("Can't confirm", "Windows Update didn't say how new this driver is, so it can't be checked against the one you have.");
                 }
-                if (item.InstalledDriverDate is not DateTime installed)
+                if (offered < ctx.Today.AddYears(-OldDriverYears))
                 {
-                    return ("Can't confirm", $"This driver is dated {offered:d MMM yyyy}, but the device it's for wasn't found, so it can't be confirmed as newer than the driver you have.");
+                    return ("Old driver", $"This driver is from {offered:d MMM yyyy}. Drivers this old are almost always older than what Windows already uses for the device, so it is left out.");
+                }
+                // Windows' own in-box drivers all carry the date 21 Jun 2006, which says nothing about how new they are.
+                if (item.InstalledDriverDate is not DateTime installed || installed.Date == InboxDriverDate)
+                {
+                    return ("Can't confirm", $"This driver is dated {offered:d MMM yyyy}, but "
+                        + (item.InstalledDriverDate is null ? "the device it's for wasn't found" : "the device uses Windows' own driver, whose 21 Jun 2006 date says nothing about its age")
+                        + ", so it can't be confirmed as newer than the driver you have.");
                 }
                 if (offered <= installed)
                 {

@@ -39,7 +39,7 @@ match gives the reason shown:
 | 5 | Older version | The offered version is older than the installed one |
 | 6 | Pre-release | Alpha, beta, rc, preview or nightly offered for a stable install |
 | 7 | Would break another package | Another installed pip package requires the current version |
-| 8 | Windows Update | Optional updates (previews); drivers with no date, whose device can't be found, or that are not newer than the driver already on the device |
+| 8 | Windows Update | Optional updates (previews); drivers more than 3 years old; drivers with no date, whose device can't be found, whose device uses Windows' own driver (dated 21 Jun 2006, so it can't be compared), or that are not newer than the driver already on the device |
 | 9 | Major version | A new major version of a pip or npm library, or of a runtime or database (Node, Python, Java, PostgreSQL and so on), until you turn on Include major versions |
 
 Listed but unticked: winget apps with an unknown installed version, optional drivers that are newer, the
