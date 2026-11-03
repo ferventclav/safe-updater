@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Checks, policy, the admin worker and the update run. No UI. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>SafeUpdater.Core</RootNamespace>
+    <AssemblyName>SafeUpdater.Core</AssemblyName>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SafeUpdater.Core.Tests" />
+  </ItemGroup>
+
+</Project>

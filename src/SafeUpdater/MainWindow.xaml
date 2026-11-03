@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="SafeUpdater.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Safe Updater">
+
+    <!-- Transparent all the way down so the Mica backdrop shows through. -->
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar: icon and name; the caption buttons are drawn by Windows. -->
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Height="48" Padding="16,0,0,0" Background="Transparent">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                <Image x:Name="TitleBarIcon" Width="16" Height="16" VerticalAlignment="Center" />
+                <TextBlock x:Name="TitleBarText"
+                           Text="Safe Updater"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Header: name, promise, what was found -->
+        <Grid Grid.Row="1" Padding="24,4,24,12" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="Safe Updater" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock Text="Apps, Windows, drivers and your dev tools, checked in one place."
+                           Style="{StaticResource MutedBodyStyle}"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Only updates that are safe to install are listed. Anything that could break something is left out, and the end of the list says why."
+                           Style="{StaticResource MutedBodyStyle}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Width="300" Spacing="4" VerticalAlignment="Center">
+                <TextBlock x:Name="SummaryText" Text="Checking…" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="SelectedText" Style="{StaticResource BodyTextBlockStyle}" />
+                <TextBlock x:Name="LastCheckedText" Style="{StaticResource MutedCaptionStyle}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Admin note, open apps, results, notices and errors -->
+        <StackPanel Grid.Row="2" Padding="24,0,24,0" Spacing="8">
+            <InfoBar x:Name="AdminInfoBar"
+                     IsOpen="False"
+                     IsClosable="False"
+                     Severity="Informational"
+                     Message="Windows will ask for admin once, for the app and Windows updates. Everything else runs as you." />
+            <InfoBar x:Name="ResultInfoBar" IsOpen="False" IsClosable="True" Severity="Success">
+                <InfoBar.ActionButton>
+                    <HyperlinkButton Content="Open the log" Click="OpenRunLog_Click" AutomationProperties.Name="Open the log of this run" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+            <InfoBar x:Name="NoticeInfoBar" IsOpen="False" IsClosable="True" Severity="Informational" />
+            <InfoBar x:Name="ErrorInfoBar" IsOpen="False" IsClosable="True" Severity="Error" />
+        </StackPanel>
+
+        <!-- Body: groups on the left, details on the right (below on narrow windows) -->
+        <Grid x:Name="BodyGrid" Grid.Row="3" Padding="24,8,24,0" ColumnSpacing="16" RowSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="DetailsColumn" Width="380" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition x:Name="DetailsRow" Height="0" />
+            </Grid.RowDefinitions>
+
+            <ScrollViewer x:Name="ListScroller"
+                          Grid.Row="0" Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="0,0,12,0">
+                <StackPanel x:Name="GroupsPanel" Spacing="12" Padding="0,0,0,16" />
+            </ScrollViewer>
+
+            <Border x:Name="DetailsPane"
+                    Grid.Row="0" Grid.Column="1"
+                    Style="{StaticResource CardStyle}"
+                    Padding="16"
+                    Margin="0,0,0,16">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="DetailsTitle"
+                               Text="Details"
+                               Style="{StaticResource SubtitleTextBlockStyle}"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="DetailsWhy"
+                               Grid.Row="1"
+                               Style="{StaticResource MutedBodyStyle}"
+                               TextWrapping="Wrap" />
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="DetailsList" Spacing="10" Padding="0,4,12,4" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer: status on the left, commands on the right -->
+        <Grid Grid.Row="4" Padding="24,4,16,12" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Spacing="4">
+                <TextBlock x:Name="StatusText"
+                           Style="{StaticResource MutedCaptionStyle}"
+                           TextTrimming="CharacterEllipsis" />
+                <ProgressBar x:Name="WorkBar"
+                             Minimum="0" Maximum="1" Value="0"
+                             Visibility="Collapsed"
+                             AutomationProperties.Name="Update progress" />
+            </StackPanel>
+            <CommandBar Grid.Column="1"
+                        DefaultLabelPosition="Right"
+                        Background="Transparent"
+                        VerticalAlignment="Center"
+                        OverflowButtonVisibility="Auto">
+                <AppBarButton x:Name="CheckButton"
+                              Label="Check again"
+                              Icon="Refresh"
+                              Click="Check_Click"
+                              AutomationProperties.Name="Check for updates again">
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F5" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarToggleButton x:Name="MajorsToggle"
+                                    Label="Include major versions"
+                                    Click="MajorsToggle_Click"
+                                    AutomationProperties.Name="Include major versions">
+                    <AppBarToggleButton.Icon>
+                        <FontIcon Glyph="&#xE7BA;" />
+                    </AppBarToggleButton.Icon>
+                </AppBarToggleButton>
+                <AppBarElementContainer VerticalContentAlignment="Center" IsTabStop="False">
+                    <Button x:Name="UpdateButton"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Content="Update selected"
+                            Margin="8,0,4,0"
+                            MinWidth="160"
+                            IsEnabled="False"
+                            Click="Update_Click"
+                            AutomationProperties.Name="Update selected" />
+                </AppBarElementContainer>
+                <CommandBar.SecondaryCommands>
+                    <AppBarToggleButton x:Name="RestoreToggle"
+                                        Label="Make a restore point before admin updates"
+                                        Click="RestoreToggle_Click">
+                        <AppBarToggleButton.Icon>
+                            <FontIcon Glyph="&#xE81C;" />
+                        </AppBarToggleButton.Icon>
+                    </AppBarToggleButton>
+                    <AppBarToggleButton x:Name="TestToggle"
+                                        Label="Test my tools after a Python update"
+                                        Click="TestToggle_Click">
+                        <AppBarToggleButton.Icon>
+                            <FontIcon Glyph="&#xE9D5;" />
+                        </AppBarToggleButton.Icon>
+                    </AppBarToggleButton>
+                    <AppBarButton Label="Roll back the last Python update" Click="Rollback_Click">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE7A7;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarSeparator />
+                    <AppBarButton Label="Open the NVIDIA app" Click="OpenNvidia_Click">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE7F4;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton Label="Windows Update settings" Click="WindowsUpdateSettings_Click">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE713;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton Label="Open the log folder" Click="OpenLogFolder_Click">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE81C;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                </CommandBar.SecondaryCommands>
+            </CommandBar>
+        </Grid>
+    </Grid>
+</Window>
